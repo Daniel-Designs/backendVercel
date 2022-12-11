@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "user" ADD COLUMN     "grammarlevel" SMALLINT NOT NULL DEFAULT 0,
+ADD COLUMN     "speakinglevel" SMALLINT NOT NULL DEFAULT 0,
+ADD COLUMN     "writinglevel" SMALLINT NOT NULL DEFAULT 0;

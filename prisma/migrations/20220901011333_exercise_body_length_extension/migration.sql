@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "exercise" ALTER COLUMN "exbody" SET DATA TYPE VARCHAR(2000);

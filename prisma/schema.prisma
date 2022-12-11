@@ -1,0 +1,260 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model admins {
+  idadmin      Int            @id(map: "pk_admins_idadmin") @default(autoincrement())
+  username     String         @unique @db.VarChar(100)
+  password     String         @db.VarChar(200)
+  email        String         @unique @db.VarChar(100)
+  exercises    exercise[]
+  systemreport systemreport[]
+}
+
+model block {
+  idblock                      Int      @id(map: "pk_favorites_idfavs_0") @default(autoincrement())
+  blocker                      Int
+  blockeduser                  Int
+  datec                        DateTime @default(dbgenerated("CURRENT_DATE")) @db.Date
+  user_block_blockerTouser     user     @relation("block_blockerTouser", fields: [blocker], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_block_user")
+  user_block_blockeduserTouser user     @relation("block_blockeduserTouser", fields: [blockeduser], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_block_userb")
+}
+
+model calls {
+  idcall        Int             @unique(map: "unq_calls_idcall") @default(autoincrement())
+  idchat        Int
+  timestmp      DateTime        @default(now()) @db.Timestamp(0)
+  idcalled      Int
+  timeduration  Int?
+  chat          chat            @relation(fields: [idchat], references: [idchat], onDelete: NoAction, onUpdate: NoAction, map: "fk_calls_chat")
+  user          user            @relation(fields: [idcalled], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_calls_user")
+  transcription transcription[]
+
+  @@id([idcall, idchat], map: "pk_calls")
+}
+
+model chat {
+  idchat                Int       @id(map: "pk_chat_idchat") @default(autoincrement())
+  usero                 Int
+  usert                 Int
+  channelname           String    @unique @db.VarChar(164)
+  datecreated           DateTime  @default(dbgenerated("CURRENT_DATE")) @db.Date
+  timelastmsg           DateTime? @db.Timestamp()
+  user_chat_useroTouser user      @relation("chat_useroTouser", fields: [usero], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_chat_usero")
+  user_chat_usertTouser user      @relation("chat_usertTouser", fields: [usert], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_chat_usert")
+  calls                 calls[]
+  message               message[]
+
+  @@unique([usero, usert])
+}
+
+model exercise {
+  idexercise          Int                   @id(map: "pk_exercise_idexercise") @default(autoincrement())
+  title               String                @db.VarChar(100)
+  skillID             String                @db.Char(1)
+  typeID              String                @db.VarChar(5)
+  levelID             String                @db.Char(1)
+  topicID             Int?                  @db.SmallInt
+  exbody              Json
+  exstate             String                @default("active") @db.VarChar(15) // active/inactive
+  createdby           admins[]
+  exertype            exercisetype          @relation(fields: [typeID], references: [idtype], onDelete: NoAction, onUpdate: NoAction)
+  exerskill           exerciseskill         @relation(fields: [skillID], references: [idskill], onDelete: NoAction, onUpdate: NoAction)
+  exerlevel           exerciselevel         @relation(fields: [levelID], references: [idlevel], onDelete: NoAction, onUpdate: NoAction)
+  exertopic           exercisetopic?        @relation(fields: [topicID], references: [idtopic], onDelete: NoAction, onUpdate: NoAction)
+  userexercises       userexercises[]
+  exercisetranscripts exercisetranscripts[]
+}
+
+model exercisetype {
+  idtype    String     @id @db.VarChar(3)
+  type      String     @db.VarChar(30)
+  exercises exercise[]
+}
+
+model exerciseskill {
+  idskill   String     @id @db.Char(1)
+  skill     String     @db.VarChar(30)
+  exercises exercise[]
+}
+
+model exerciselevel {
+  idlevel   String     @id @db.Char(1)
+  level     String     @db.VarChar(30)
+  exercises exercise[]
+}
+
+model exercisetopic {
+  idtopic   Int        @id @default(autoincrement())
+  desctopic String     @unique @db.VarChar(50)
+  exercises exercise[]
+}
+
+model favorites {
+  idfavs                          Int      @id(map: "pk_favorites_idfavs") @default(autoincrement())
+  sourceuser                      Int
+  favuser                         Int
+  datec                           DateTime @default(now()) @db.Date
+  user_favorites_sourceuserTouser user     @relation("favorites_sourceuserTouser", fields: [sourceuser], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_favorites_user")
+  user_favorites_favuserTouser    user     @relation("favorites_favuserTouser", fields: [favuser], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_favorites_userf")
+}
+
+model interest {
+  idinterest   Int            @id(map: "pk_interest_idinterest") @default(autoincrement())
+  interstdesc  String         @db.VarChar(50)
+  userinterest userinterest[]
+}
+
+model labelnote {
+  idlabel   Int    @id(map: "pk_labelnote_idlabel")
+  labeldesc String @db.VarChar(50)
+  note      note[]
+}
+
+model message {
+  idmsg         Int       @unique(map: "unq_message_idmsg") @default(autoincrement())
+  idchat        Int
+  idauthor      Int
+  read          Boolean   @default(false)
+  msgfather     Int?
+  timestmp      DateTime  @default(now()) @db.Timestamp(0)
+  body          String    @db.VarChar(150)
+  chat          chat      @relation(fields: [idchat], references: [idchat], onDelete: NoAction, onUpdate: NoAction, map: "fk_message_chat")
+  message       message?  @relation("messageTomessage", fields: [msgfather], references: [idmsg], onDelete: NoAction, onUpdate: NoAction, map: "fk_message_message")
+  user          user      @relation(fields: [idauthor], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_message_user")
+  other_message message[] @relation("messageTomessage")
+
+  @@id([idmsg, idchat], map: "pk_message")
+}
+
+model note {
+  idnote      Int        @id(map: "pk_note_idnote") @default(autoincrement())
+  author      Int
+  title       String     @db.VarChar(50)
+  body        String     @db.VarChar(600)
+  datecreated DateTime   @default(dbgenerated("CURRENT_DATE")) @db.Date
+  datelastmod DateTime   @db.Date
+  label       Int?
+  labelnote   labelnote? @relation(fields: [label], references: [idlabel], onDelete: NoAction, onUpdate: NoAction, map: "fk_note_labelnote")
+  user        user       @relation(fields: [author], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_note_user")
+}
+
+model reasonreport {
+  idreason   Int          @id(map: "pk_reasonreport_idreason")
+  reasondesc String       @db.VarChar(150)
+  userreport userreport[]
+}
+
+model reporttype {
+  idtyper      Int            @id(map: "pk_reporttype_idtyper") @db.SmallInt
+  typerdesc    String         @db.VarChar(100)
+  systemreport systemreport[]
+}
+
+model state {
+  idstate   Int    @id(map: "pk_states_idstate") @db.SmallInt
+  statedesc String @db.VarChar(15)
+  users     user[]
+}
+
+model systemreport {
+  idsysreport Int        @id(map: "pk_systemreport_idsysreport") @default(autoincrement())
+  generatedby Int
+  typer       Int        @db.SmallInt
+  dateg       DateTime   @default(dbgenerated("CURRENT_DATE")) @db.Date
+  document    String     @db.VarChar(150)
+  admins      admins     @relation(fields: [generatedby], references: [idadmin], onDelete: NoAction, onUpdate: NoAction, map: "fk_systemreport_admins")
+  reporttype  reporttype @relation(fields: [typer], references: [idtyper], onDelete: NoAction, onUpdate: NoAction, map: "fk_systemreport_reporttype")
+}
+
+model transcription {
+  idtranscript Int    @default(autoincrement())
+  idcall       Int
+  idauthor     Int
+  body         String @db.VarChar(5000)
+  calls        calls  @relation(fields: [idtranscript], references: [idcall], onDelete: NoAction, onUpdate: NoAction, map: "fk_call")
+  user         user   @relation(fields: [idauthor], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_transcript_user")
+
+  @@id([idtranscript, idcall], map: "pk_transcription")
+}
+
+model user {
+  iduser                                   Int                   @id(map: "pk_tbl_iduser") @default(autoincrement())
+  name                                     String                @db.VarChar(100)
+  password                                 String                @db.VarChar(200)
+  username                                 String                @unique @db.VarChar(100)
+  email                                    String                @unique @db.VarChar(100)
+  emailr                                   String?               @db.VarChar(100)
+  secfacode                                String?               @db.VarChar(50)
+  age                                      Int                   @db.SmallInt
+  level                                    Int                   @default(0) @db.SmallInt
+  writinglevel                             Int                   @default(0) @db.SmallInt
+  speakinglevel                            Int                   @default(0) @db.SmallInt
+  grammarlevel                             Int                   @default(0) @db.SmallInt
+  bio                                      String?               @db.VarChar(700)
+  pfp                                      String?               @default("https://res.cloudinary.com/twitter-clone-media/image/upload/v1597737557/user_wt3nrc.png") @db.VarChar(100)
+  hours                                    Int?                  @db.SmallInt
+  state                                    Int                   @default(1) @db.SmallInt
+  state_user                               state                 @relation(fields: [state], references: [idstate], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_state")
+  block_block_blockerTouser                block[]               @relation("block_blockerTouser")
+  block_block_blockeduserTouser            block[]               @relation("block_blockeduserTouser")
+  calls                                    calls[]
+  chat_chat_useroTouser                    chat[]                @relation("chat_useroTouser")
+  chat_chat_usertTouser                    chat[]                @relation("chat_usertTouser")
+  favorites_favorites_sourceuserTouser     favorites[]           @relation("favorites_sourceuserTouser")
+  favorites_favorites_favuserTouser        favorites[]           @relation("favorites_favuserTouser")
+  message                                  message[]
+  note                                     note[]
+  userexercises                            userexercises[]
+  userinterest                             userinterest[]
+  userreport_userTouserreport_reporter     userreport[]          @relation("userTouserreport_reporter")
+  userreport_userTouserreport_reporteduser userreport[]          @relation("userTouserreport_reporteduser")
+  transcription                            transcription[]
+  exercisetranscripts                      exercisetranscripts[]
+}
+
+model userexercises {
+  idexercise Int
+  iduser     Int
+  rdate      DateTime @default(now()) @db.Date
+  results    Int      @db.SmallInt
+  exercise   exercise @relation(fields: [idexercise], references: [idexercise], onDelete: NoAction, onUpdate: NoAction, map: "fk_userexercises_exercise")
+  user       user     @relation(fields: [iduser], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_userexercises_user")
+
+  @@id([idexercise, iduser], map: "pk_userexercises")
+}
+
+model exercisetranscripts {
+  idexercise Int
+  iduser     Int
+  transcript String
+  exercise   exercise @relation(fields: [idexercise], references: [idexercise], onDelete: NoAction, onUpdate: NoAction, map: "fk_userexercises_exercise")
+  user       user     @relation(fields: [iduser], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_userexercises_user")
+
+  @@id([idexercise, iduser], map: "pk_exercisetranscripts")
+}
+
+model userinterest {
+  iduser     Int
+  idinterest Int
+  interest   interest @relation(fields: [idinterest], references: [idinterest], onDelete: NoAction, onUpdate: NoAction, map: "fk_userinterest_interest")
+  user       user     @relation(fields: [iduser], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_userinterest_user")
+
+  @@id([iduser, idinterest], map: "pk_userinterest")
+}
+
+model userreport {
+  idreport                           Int          @id(map: "pk_userreport_idreport")
+  reporter                           Int
+  reporteduser                       Int
+  reason                             Int
+  datec                              DateTime     @default(dbgenerated("CURRENT_DATE")) @db.Date
+  reasonreport                       reasonreport @relation(fields: [reason], references: [idreason], onDelete: NoAction, onUpdate: NoAction, map: "fk_userreport_reasonreport")
+  user_userTouserreport_reporter     user         @relation("userTouserreport_reporter", fields: [reporter], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_userreport_user")
+  user_userTouserreport_reporteduser user         @relation("userTouserreport_reporteduser", fields: [reporteduser], references: [iduser], onDelete: NoAction, onUpdate: NoAction, map: "fk_userreport_userr")
+}

@@ -1,0 +1,7 @@
+const server = require("./app");
+
+const port = process.env.DEVPORT;
+
+server.listen(port, () => {
+  console.log("Server listening on port", port);
+});
